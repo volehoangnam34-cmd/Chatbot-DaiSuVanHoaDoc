@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đại sứ Văn hóa Đọc AI - Cần Thơ</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f7; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 600px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
+        h1 { background: #2c3e50; color: white; margin: 0; padding: 20px; text-align: center; font-size: 1.5rem; }
+        #chat-box { height: 450px; overflow-y: auto; padding: 20px; border-bottom: 1px solid #ddd; display: flex; flex-direction: column; }
+        .msg { margin-bottom: 15px; padding: 10px 15px; border-radius: 10px; max-width: 85%; line-height: 1.5; }
+        .user { background: #007bff; color: white; align-self: flex-end; }
+        .bot { background: #f1f0f0; color: #333; align-self: flex-start; border-left: 4px solid #27ae60; white-space: pre-wrap; }
+        .input-area { display: flex; padding: 15px; background: #fafafa; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+        button { background: #27ae60; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 25px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #219150; }
+        .loading { font-style: italic; color: #888; font-size: 0.9rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 Đại sứ Văn hóa Đọc AI</h1>
+    <div id="chat-box">
+        <div class="msg bot">Xin chào! Mình là Trợ lý AI - Đại sứ Văn hóa Đọc. Hôm nay bạn muốn khám phá cuốn sách nào?</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Nhập câu hỏi về sách tại đây..." onkeypress="if(event.keyCode==13) sendMessage()">
+        <button onclick="sendMessage()">Gửi</button>
+    </div>
+</div>
+
+<script>
+    async function sendMessage() {
+        
+        let input = document.getElementById("user-input");
+        let box = document.getElementById("chat-box");
+        let text = input.value.trim();
+        console.log("TEXT:", text);
+        
+        if (!text) return;
+
+        // Hiển thị tin nhắn người dùng
+        box.innerHTML += `<div class="msg user"><b>Bạn:</b> ${text}</div>`;
+        input.value = "";
+        box.scrollTop = box.scrollHeight;
+
+        // Hiển thị trạng thái đang suy nghĩ
+        let loadingId = "load-" + Date.now();
+        box.innerHTML += `<div class="loading" id="${loadingId}">Chatbot đang suy nghĩ...</div>`;
+
+        try {
+            console.log("SẮP FETCH");
+            let response = await fetch('http://127.0.0.1:5000/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // THIẾU DÒNG NÀY LÀ BÁO LỖI 500 NGAY
+                },
+                body: JSON.stringify({message: text})
+            });
+            let data = await response.json();
+
+            document.getElementById(loadingId).remove();
+
+            // 👉 THÊM CHECK LỖI
+            if (!data || !data.reply) {
+                box.innerHTML += `<div class="msg bot">Lỗi backend rồi!</div>`;
+                return;
+            }
+
+            
+            // Hiệu ứng gõ chữ
+            let botDiv = document.createElement("div");
+            botDiv.className = "msg bot";
+            botDiv.innerHTML = "<b>Chatbot:</b><br>";
+            box.appendChild(botDiv);
+
+            let replyText = String(data.reply);
+            let i = 0;
+
+            function typeEffect() {
+                if (i < replyText.length) {
+                    botDiv.innerHTML += replyText.charAt(i);
+                    i++;
+                    setTimeout(typeEffect, 20);
+                }
+            }
+
+            typeEffect();
+        } catch (e) {
+            document.getElementById(loadingId).innerText = "Lỗi kết nối rồi!";
+        }
+        
+        box.scrollTop = box.scrollHeight;
+    }
+</script>
+</body>
+</html>
